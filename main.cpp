@@ -45,7 +45,7 @@ int main(int argc, char *argv[]){
 
   
  
-  for (int k = (*ptr)/p * id; k < (*ptr)/p; k++){
+  for (int k = (*ptr)/p * id, j = k; k < (*ptr)/p + j; k++){
     if (k == (*ptr)/p * id)
       std::cout<<"processo " <<id <<" esta trabalhando...\n";
     if (vetBinarios[k] != ""){
