@@ -5,43 +5,42 @@
 #include <iterator>
 #include "md5.h"
 #include <mpi.h>
-#include <string>
-#include <stdio.h>
+#include <cstdio>
+#include <cstring>
 
 std::string calcularHash (std::string nomeArq, std::string nomeDir);
 void percorrerDir (std::string nomeDir, std::string *vetBinarios, int *i);
+std::string encontrarArquivo (std::string nomeDir, std::string *vetBinarios, int *i, std::string nomeArq);
 
 
 void mergeSort(std::string *ptr, int p, int r);
 void merge(std::string *ptr, int p, int q, int r);
 
-
-
 int main(int argc, char *argv[]){
-  MPI::Init(argc, argv);   
+  std::string diretorio;  
+  std::getline(std::cin, diretorio);
+  diretorio = "/" + diretorio;
   int p;
   int id;
   int ierr;
-  std::string vetBinarios[10000];
+  std::string vetBinarios[10000];  
+  std::string hashs[10000]; 
   int var = 0;
-  int *ptr = &var;
-  std::string diretorio;
-  //if (id == 0)
-    //std::cin>>diretorio; 
-  diretorio = "/mnt/e/Qt/Projects/ARQ2/MPI/source";  
+  int *ptr = &var;  
+  //LER O DIRETÓRIO DE FORMA MISTERIOSA!  
+  //diretorio = "/mnt/c/Users/Victor/Documents/Battlefield 4";  
   percorrerDir(diretorio, vetBinarios, ptr);
+  mergeSort(vetBinarios, 0 , *ptr);  
 
-  mergeSort(vetBinarios, 0 , *ptr);
+  MPI::Init(argc, argv); 
 
-  std::string hashs[10000];  
-   
- 
 //  Get the number of processes.
   p = MPI::COMM_WORLD.Get_size();
-  
+  //std::cout<<"Num P: " <<p <<"\n";  
 
 //  Get the individual process ID.
   id = MPI::COMM_WORLD.Get_rank();  
+  //std::cout<<"Num R: " <<id <<"\n";
 
   
  
@@ -77,19 +76,8 @@ int main(int argc, char *argv[]){
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
 std::string calcularHash (std::string nomeArq, std::string nomeDir){
-  std::string caminho = nomeDir+"/"+nomeArq;
+  std::string caminho = nomeDir + "/" + nomeArq;
   // abrir o arquivo:
   std::streampos fileSize;
   std::string binario;
@@ -123,20 +111,21 @@ std::string calcularHash (std::string nomeArq, std::string nomeDir){
   return binario;
 }
 
+
 void percorrerDir (std::string nomeDir, std::string *vetBinarios, int *i){
   //abrir diretorio
   DIR *dir;
   struct dirent *ent;
 
   if((dir = opendir (nomeDir.c_str())) != NULL){
-    /* percorrer todos os arquivos dentro de um diretorio*/
+    //percorrer todos os arquivos dentro de um diretorio
     while ((ent = readdir (dir)) != NULL){
       //se for arquivo guardar binario na matriz se diretorio entrar nele
       if(ent->d_type == DT_DIR ){
         //verificar se é um diretório válido
         if(ent->d_name[0] != '.'){
           //concatenar caminho
-          percorrerDir(nomeDir+ '/'+ent->d_name, vetBinarios, i);
+          percorrerDir(nomeDir + '/' + ent->d_name, vetBinarios, i);
         }
       }
 
@@ -151,13 +140,43 @@ void percorrerDir (std::string nomeDir, std::string *vetBinarios, int *i){
   }
 
   else{
-    /* impossivel abrir diretorio */
+    // impossivel abrir diretorio 
     perror ("");
   }
 }
 
 
+std::string encontrarArquivo (std::string nomeDir, std::string *vetBinarios, int *i, std::string nomeArq){
+  //abrir diretorio
+  DIR *dir;
+  struct dirent *ent;
 
+  if((dir = opendir (nomeDir.c_str())) != NULL){
+    //percorrer todos os arquivos dentro de um diretorio
+    while ((ent = readdir (dir)) != NULL){
+      //se for arquivo guardar binario na matriz se diretorio entrar nele
+      if(ent->d_type == DT_DIR ){
+        //verificar se é um diretório válido
+        if(ent->d_name[0] != '.'){
+          //concatenar caminho
+          percorrerDir(nomeDir + '/' + ent->d_name, vetBinarios, i, nomeArq);
+        }
+      }
+
+      else{
+        //pegar o binario do arquivo e armazenar na matriz
+        if (ent->d_name == nomeArq)
+          return nomeDir + "/" + ent->d_name;       
+      }
+    }
+    closedir (dir);
+  }
+
+  else{
+    // impossivel abrir diretorio 
+    perror ("");
+  }
+}
 
 
 void mergeSort(std::string *ptr, int p, int r){
